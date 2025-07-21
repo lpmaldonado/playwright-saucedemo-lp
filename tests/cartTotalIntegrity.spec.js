@@ -3,23 +3,40 @@ const { LoginPage } = require('../pages/LoginPage');
 const { ProductsPage } = require('../pages/ProductsPage');
 const { CartPage } = require('../pages/CartPage');
 
-test('cart total integrity for dynamic items', async ({ page }) => {
-  const login = new LoginPage(page);
-  const products = new ProductsPage(page);
-  const cart = new CartPage(page);
+test.describe('Data Integrity of Cart Totals', () => {
+  test('standard_user subtotal matches sum of selected item prices', async ({ page }) => {
+    const login = new LoginPage(page);
+    const products = new ProductsPage(page);
+    const cart = new CartPage(page);
 
-  await login.goto();
-  await login.login('standard_user', 'secret_sauce');
+    // 1. Login as standard_user
+    await login.navigate();
+    await login.loginAs('standard_user', 'secret_sauce');
 
-  const items = ['Sauce Labs Backpack', 'Sauce Labs Bike Light', 'Sauce Labs Bolt T-Shirt'];
-  for (const item of items) await products.addProductByName(item);
-  await products.openCart();
+    // 2. Define items to add
+    const selectedItems = ['Sauce Labs Backpack', 'Sauce Labs Bike Light', 'Sauce Labs Bolt T-Shirt'];
+    let expectedTotal = 0;
 
-  await cart.checkout();
-  await cart.fillShippingInfo('QA', 'Engineer', '54321');
+    // 3. On products page: capture each price and add to cart
+    for (const name of selectedItems) {
+      const priceLocator = page.locator(`.inventory_item:has-text("${name}") .inventory_item_price`);
+      const priceText = await priceLocator.textContent();
+      expectedTotal += parseFloat(priceText.replace('$', ''));
 
-  const prices = await cart.getCartPrices();
-  const expected = prices.reduce((a, b) => a + b, 0);
-  const displayed = await cart.getItemTotal();
-  expect(displayed).toBeCloseTo(expected, 2);
+      const addBtn = await products.addProduct(name);
+      await expect(addBtn).toHaveText('Remove');
+    }
+
+    // 4. Proceed to checkout
+    await products.goToCart();
+    await cart.checkoutInformation('QA', 'Engineer', '54321');
+
+    // 5. Validate displayed subtotal matches expected
+    const displayedTotal = await cart.getSubtotal();
+    expect(displayedTotal).toBeCloseTo(expectedTotal, 2);
+
+    // 6. Complete order for cleanup
+    await cart.finishOrder();
+    await expect(cart.completeContainer).toBeVisible();
+  });
 });

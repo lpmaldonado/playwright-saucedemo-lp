@@ -13,7 +13,7 @@ test.describe('Successful Transaction Validation', () => {
     await login.navigate();
     await login.loginAs('standard_user', 'secret_sauce');
 
-    // 2. Add two products
+    // 2. Add specific products
     const productsToAdd = ['Sauce Labs Backpack', 'Sauce Labs Bolt T-Shirt'];
     for (const name of productsToAdd) {
       const btn = await products.addProduct(name);
@@ -27,14 +27,14 @@ test.describe('Successful Transaction Validation', () => {
     expect(await cart.getCartCount()).toBe(productsToAdd.length);
 
     // 4. Checkout flow
-    await cart.checkoutInformation('Test', 'User', '12345');
+    await cart.checkoutInformation('QA', 'Engineer', '54321');
 
     // 5. Price validation
     const expectedTotal = await cart.sumPrices();
     const displayedTotal = await cart.getSubtotal();
     expect(displayedTotal).toBeCloseTo(expectedTotal, 2);
 
-    // 6. Finish order and verify completion container
+    // 6. Finish order and verify completion
     await cart.finishOrder();
     await expect(cart.completeContainer).toBeVisible();
   });
