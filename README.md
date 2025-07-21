@@ -1,4 +1,4 @@
-# Playwright SauceDemo POM JS
+# Playwright SauceDemo JS By Leidy Pineda QA Engineer
 
 Welcome to Leidy Pineda's repository, answering the QA Automation Engineer assessment questions. This README will show you how to configure and execute the tests.
 
